@@ -110,5 +110,3 @@ def donwcast_df(df, objet_to_category=False, verbose=1):
         mem_usg = df.memory_usage().sum() / 1024**2 
         print("Memory usage is: ",mem_usg," MB")
         print("This is ",100*mem_usg/start_mem_usg,"% of the initial size")
-
-    return df
