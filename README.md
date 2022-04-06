@@ -1,4 +1,4 @@
-# Proyecto final
+# Santander customer transaction prediction
 
 <div align=center>
     <img src ="./images/santander_logo.png" alt="Banco Santander logo">
