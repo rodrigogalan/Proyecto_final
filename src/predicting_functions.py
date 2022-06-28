@@ -4,14 +4,15 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import confusion_matrix
 
-from sklearn.metrics import roc_auc_score, roc_curve, auc
 
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
 from lightgbm import LGBMClassifier
 
-
+from hyperopt import hp
 
 
 def train_test(train):
@@ -47,14 +48,14 @@ def confusion_matrix_total(y_test, y_pred):
     plt.xlabel('Prediccion')
     plt.show();
 
-def reg_model(modelo, x_train, x_test, y_train, y_test):
+def reg_model(modelo, X_train, X_test, y_train, y_test):
     '''
     This function trains a regresion model and returns the parameters needed to calculate the roc curve and the predictions
     
     Parameters:
     modelo (machine learning model): Modelo to be adjust and plot the roc curve
-    x_train (array): Array to train the model 
-    x_test (array): Array to test the model 
+    X_train (array): Array to train the model 
+    X_test (array): Array to test the model 
     y_train (array): Array to train the model (solution)
     y_test (array): Array to train the model (solution)
 
@@ -63,10 +64,10 @@ def reg_model(modelo, x_train, x_test, y_train, y_test):
     tpr (array): Increasing true positive rates
     roc_auc (float): area under the roc curve
     '''
-    modelo.fit(X=x_train, y=y_train)
+    modelo.fit(X=X_train, y=y_train)
     y_pred=modelo.predict(X=X_test)
 
-    fpr, tpr, _ = roc_curve(y_test, modelo.predict_proba(x_test)[:, 1])
+    fpr, tpr, _ = roc_curve(y_test, modelo.predict_proba(X_test)[:, 1])
     roc_auc = auc(fpr, tpr)
 
     return fpr, tpr, roc_auc, y_pred
@@ -104,104 +105,52 @@ def export_modelo(y_pred):
     sample.to_csv('./Data/sample.csv',index=False)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def function_prueba_datos(archivo):
+def recuento_target(train):
     '''
-    This function takes an array with a target column, undersample it, trains a lgbm model and print the roc_curve
-    
+    This function takes an array and returns the percentage of
+    data with each target and draws a bar chart with the information.
+
     Parameters:
-    archivo (array): Array to be undersampled and fit, predict with the lgbm model.
+    train (array): Array to analyse
     '''
-    train = pd.read_csv('/media/rodrigo/Rodrigo/'+archivo+'.csv')
+
+    train.target.value_counts().plot(kind='bar', figsize=(16,8));
+    print('El porcentaje de 0 en el target es:', round(list(train.target.value_counts())[0]/train.shape[0]*100,2),"%")
+    print('El porcentaje de 1 en el target es:', round(list(train.target.value_counts())[1]/train.shape[0]*100,2),"%")
+
+def over_sampling(train):
+    '''
+    This function takes an array and returns another array over sampling
+
+    Parameters:
+    train (array): Array to over sample
+    '''
+
+    over = RandomOverSampler(sampling_strategy=1)
+    X_over, y_over = over.fit_resample(train.drop(columns=['target']), train.target)
+    train_over = pd.concat([y_over, X_over], axis=1)
+    return train_over
+
+def under_sampling(train):
+    '''
+    This function takes an array and returns another array under sampling
+
+    Parameters:
+    train (array): Array to under sample
+    '''
 
     under = RandomUnderSampler(sampling_strategy=1)
-
-    X, y = under.fit_resample(train.drop(columns=['target']), train.target)
-
-    train = pd.concat([y, X], axis=1)
-
-    X = train.drop(columns=['target'])
-    y=train.target
+    X_under, y_under = under.fit_resample(train.drop(columns=['target']), train.target)
+    train_under = pd.concat([y_under, X_under], axis=1)
+    return train_under
 
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
-
-    lgbm = LGBMClassifier(n_jobs=-1)
-
-    lgbm = lgbm.fit(X_train, y_train,eval_metric='auc',eval_set=(X_test , y_test),verbose=50,early_stopping_rounds= 50)
-
-
-
-    fpr, tpr, _ = roc_curve(y_test, lgbm.predict_proba(X_test)[:, 1])
-    roc_auc = auc(fpr, tpr)
-
-    plt.figure()
-    plt.plot(fpr, tpr, color='red', label='ROC curve (area = %0.3f)' % roc_auc)
-    plt.plot([0, 1], [0, 1], color='black', lw=2, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve')
-    plt.legend(loc="upper left")
-    plt.show()
+# Posibles parámetros para entrenar el modelo
+params={'num_leaves' : hp.quniform('num_leaves', 1, 100, 2),
+        'max_depth' : hp.quniform('max_depth', 1, 100, 2),
+        'learning_rate' : hp.uniform('learning_rate', 0.0001, 1),
+        'n_estimators': hp.quniform('n_estimators', 10, 1000, 25),
+        'subsample':hp.uniform('subsample', 0.7, 1),
+        'reg_lambda': hp.uniform('reg_lambda', 0, 1),
+        'min_child_weight': hp.quniform('min_child_weight', 1, 10, 1)
+        }
