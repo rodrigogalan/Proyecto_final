@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -10,7 +9,6 @@ from sklearn.metrics import confusion_matrix
 
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
-from lightgbm import LGBMClassifier
 
 from hyperopt import hp
 
