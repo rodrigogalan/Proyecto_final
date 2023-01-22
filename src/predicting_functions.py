@@ -46,6 +46,29 @@ def confusion_matrix_total(y_test, y_pred):
     plt.xlabel('Prediccion')
     plt.show();
 
+
+def roc_curve_plot(fpr, tpr, roc_auc):
+    '''
+    This function prints a roc curve
+    
+    Parameters:
+    fpr (array):   Increasing false positive rates 
+    tpr (array): Increasing true positive rates
+    roc_auc (float): area under the roc curve
+    '''
+
+    plt.figure()
+    plt.plot(fpr, tpr, color='red', label='ROC curve (area = %0.3f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='black', lw=2, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve')
+    plt.legend(loc="upper left")
+    plt.show()
+
+
 def reg_model(modelo, X_train, X_test, y_train, y_test):
     '''
     This function trains a regresion model and returns the parameters needed to calculate the roc curve and the predictions
@@ -71,38 +94,6 @@ def reg_model(modelo, X_train, X_test, y_train, y_test):
     return fpr, tpr, roc_auc, y_pred
 
 
-def roc_curve_plot(fpr, tpr, roc_auc):
-    '''
-    This function prints a roc curve
-    
-    Parameters:
-    fpr (array):   Increasing false positive rates 
-    tpr (array): Increasing true positive rates
-    roc_auc (float): area under the roc curve
-    '''
-
-    plt.figure()
-    plt.plot(fpr, tpr, color='red', label='ROC curve (area = %0.3f)' % roc_auc)
-    plt.plot([0, 1], [0, 1], color='black', lw=2, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.0])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve')
-    plt.legend(loc="upper left")
-    plt.show()
-
-
-def export_modelo(y_pred):
-    '''
-    This funcition takes a solution array and exports it
-    '''
-
-    sample=pd.read_csv('./Data/sample.csv')
-    sample.price=y_pred
-    sample.to_csv('./Data/sample.csv',index=False)
-
-
 def recuento_target(train):
     '''
     This function takes an array and returns the percentage of
@@ -116,6 +107,7 @@ def recuento_target(train):
     print('El porcentaje de 0 en el target es:', round(list(train.target.value_counts())[0]/train.shape[0]*100,2),"%")
     print('El porcentaje de 1 en el target es:', round(list(train.target.value_counts())[1]/train.shape[0]*100,2),"%")
 
+
 def over_sampling(train):
     '''
     This function takes an array and returns another array over sampling
@@ -128,6 +120,7 @@ def over_sampling(train):
     X_over, y_over = over.fit_resample(train.drop(columns=['target']), train.target)
     train_over = pd.concat([y_over, X_over], axis=1)
     return train_over
+
 
 def under_sampling(train):
     '''
@@ -152,3 +145,13 @@ params={'num_leaves' : hp.quniform('num_leaves', 1, 100, 2),
         'reg_lambda': hp.uniform('reg_lambda', 0, 1),
         'min_child_weight': hp.quniform('min_child_weight', 1, 10, 1)
         }
+
+
+def export_modelo(y_pred):
+    '''
+    This funcition takes a solution array and exports it
+    '''
+
+    sample=pd.read_csv('./data/sample_submission.csv')
+    sample.target=y_pred
+    sample.to_csv('./data/sample_submission.csv',index=False)
